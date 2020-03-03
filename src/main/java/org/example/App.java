@@ -120,6 +120,26 @@ public class App extends Application {
     private void draw() {
         g.setFill(Color.WHITE);
         g.fillRect(0, 0, 1 + columns * SQUARE_SIZE, 1 + rows * SQUARE_SIZE);
+        g.setStroke(Color.BLACK);
+
+        for (int i = 0; i <= rows; i++) {
+            g.strokeLine(0.5, 0.5 + i * SQUARE_SIZE, columns * SQUARE_SIZE + 0.5, 0.5 + i * SQUARE_SIZE);
+        }
+        for (int i = 0; i <= columns; i++) {
+            g.strokeLine(0.5 + i * SQUARE_SIZE, 0.5, 0.5 + i * SQUARE_SIZE, rows * SQUARE_SIZE + 0.5);
+        }
+
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < columns; c++) {
+                if (finished[r][c]) {
+                    g.setFill(Color.GRAY);
+                    g.fillRect(1 + c * SQUARE_SIZE, 1 + r * SQUARE_SIZE, SQUARE_SIZE - 1, SQUARE_SIZE - 1);
+                } else if (encountered[r][c]) {
+                    g.setFill(Color.RED);
+                    g.fillRect(1 + c * SQUARE_SIZE, 1 + r * SQUARE_SIZE, SQUARE_SIZE - 1, SQUARE_SIZE - 1);
+                }
+            }
+        }
     }
 
     private void doAbort() {
