@@ -23,6 +23,90 @@ import java.util.Stack;
 
 public class App extends Application {
 
+    private static class Location {
+        int row;
+        int col;
+
+        Location(int r, int col) {
+            row = r;
+            col = col;
+        }
+    }
+
+    private static class Node {
+        Location loc;
+        Node next;
+    }
+
+    private static class Stack {
+        private Node top = null;
+        private int size = 0;
+
+        void push(Location location) {
+            Node newTop = new Node();
+            newTop.loc = location;
+            newTop.next = top;
+            top = newTop;
+            size++;
+        }
+
+        Location pop() {
+            Location topItem = top.loc;
+            top = top.next;
+            size--;
+            return topItem;
+        }
+
+        boolean isEmpty() {
+            return top == null;
+        }
+
+        int getSize() {
+            return size;
+        }
+    }
+
+    private static class Queue {
+
+        private Node head = null;
+        private Node tail = null;
+        private int size = 0;
+
+        void enqueue(Location location) {
+            Node newTail = new Node();
+            newTail.loc = location;
+            if (head == null) {
+                head = newTail;
+                tail = newTail;
+            } else {
+                tail.next = newTail;
+                tail=newTail;
+            }
+            size++;
+        }
+
+        Location dequeue() {
+            Location firstIten = head.loc;
+            head = head.next;
+            if (head == null) {
+                tail = null;
+            }
+            size--;
+            return firstIten;
+        }
+
+        boolean isEmpty() {
+            return head == null;
+        }
+
+        int getSize() {
+            return size;
+        }
+
+
+    }
+
+
     private final static int SQUARE_SIZE = 12;
 
     private Canvas canvas;
@@ -52,7 +136,7 @@ public class App extends Application {
 
     private Queue queue;
     private Stack stack;
-    //private ArrayList<Location> randomList;
+    private ArrayList<Location> randomList;
 
 
     @Override
@@ -94,7 +178,7 @@ public class App extends Application {
         canvas.relocate(10, 10);
 
         message.setManaged(false);
-        message.relocate(15, height - 118);
+        message.relocate(15, height-118);
         message.resize(width - 30, 25);
         message.setAlignment(Pos.CENTER);
 
@@ -146,6 +230,44 @@ public class App extends Application {
     }
 
     private void mousePressed(MouseEvent e) {
+        int row =(int) ((e.getY()-1)/SQUARE_SIZE);
+        int col = (int) ((e.getX() - 1) / SQUARE_SIZE);
+        if (row < 0 || row >= rows || col < 0 || col >= columns) {
+            return;
+        }
+        if (timer == null) {
+            startComputation(row, col);
+        } else {
+            encounter(row, col);
+            draw();
+        }
+    }
+
+    private void encounter(int row, int col) {
+    }
+
+    private void startComputation(int row, int col) {
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < columns; c++) {
+                encountered[r][c] = false;
+                finished[r][c] = false;
+            }
+        }
+        method = methodChoice.getSelectionModel().getSelectedIndex();
+        switch (method) {
+            case STACK:
+                stack = new Stack();
+                message.setText("Using a stack.");
+                break;
+            case QUEUE:
+                queue=new Queue();
+                message.setText("Using a queue.");
+                break;
+            case RANDOM:
+                randomList = new ArrayList<Location>();
+                message.setText("Using a randomized list.");
+                break;
+        }
     }
 
     public static void main(String[] args) {
