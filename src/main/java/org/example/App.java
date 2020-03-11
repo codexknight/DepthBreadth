@@ -1,35 +1,33 @@
 package org.example;
 
-import javafx.animation.AnimationTimer;
 import javafx.application.Application;
-import javafx.geometry.Pos;
+import javafx.stage.Stage;
 import javafx.scene.Scene;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Label;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.input.MouseEvent;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.Pane;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import javafx.stage.Stage;
+import javafx.geometry.Pos;
+import javafx.animation.AnimationTimer;
 
 import java.util.ArrayList;
-import java.util.Queue;
-import java.util.Stack;
 
 
 public class App extends Application {
 
     private static class Location {
         int row;
-        int col;
+        int column;
 
-        Location(int r, int col) {
+        Location(int r, int c) {
             row = r;
-            col = col;
+            column = c;
         }
     }
 
@@ -42,9 +40,9 @@ public class App extends Application {
         private Node top = null;
         private int size = 0;
 
-        void push(Location location) {
+        void push(Location loc) {
             Node newTop = new Node();
-            newTop.loc = location;
+            newTop.loc = loc;
             newTop.next = top;
             top = newTop;
             size++;
@@ -70,29 +68,30 @@ public class App extends Application {
 
         private Node head = null;
         private Node tail = null;
-        private int size = 0;
+        private int size ;
 
         void enqueue(Location location) {
             Node newTail = new Node();
             newTail.loc = location;
             if (head == null) {
                 head = newTail;
-                tail = newTail;
+                tail=newTail;
             } else {
                 tail.next = newTail;
                 tail=newTail;
             }
+
             size++;
         }
 
         Location dequeue() {
-            Location firstIten = head.loc;
+            Location firstItem = head.loc;
             head = head.next;
             if (head == null) {
                 tail = null;
             }
             size--;
-            return firstIten;
+            return firstItem;
         }
 
         boolean isEmpty() {
@@ -227,6 +226,16 @@ public class App extends Application {
     }
 
     private void doAbort() {
+        if (timer != null) {
+            timer.stop();
+            timer = null;
+            methodChoice.setDisable(false);
+            abortButton.setDisable(true);
+            message.setText("Click any square to begin.");
+            queue = null;
+            stack = null;
+            randomList = null;
+        }
     }
 
     private void mousePressed(MouseEvent e) {
@@ -241,12 +250,33 @@ public class App extends Application {
             encounter(row, col);
             draw();
         }
+
     }
 
-    private void encounter(int row, int col) {
+    private void encounter(int r, int c) {
+        if (r < 0 || r >= rows || c < 0 || c >= columns || encountered[r][c] == true) {
+            return;
+        }
+        Location loc = new Location(r, c);
+        switch (method) {
+            case STACK:
+                stack.push(loc);
+                message.setText("Stack size is " + stack.getSize());
+                break;
+            case QUEUE:
+                queue.enqueue(loc);
+                message.setText("Queue size is " + queue.getSize());
+                break;
+            case RANDOM:
+                randomList.add(loc);
+                message.setText("List size is " + randomList.size());
+                break;
+        }
+        encountered[r][c] = true;
+
     }
 
-    private void startComputation(int row, int col) {
+    private void startComputation(int startRow, int startCol) {
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < columns; c++) {
                 encountered[r][c] = false;
@@ -268,6 +298,74 @@ public class App extends Application {
                 message.setText("Using a randomized list.");
                 break;
         }
+        abortButton.setDisable(false);
+        methodChoice.setDisable(true);
+        encounter(startRow, startCol);
+        timer=new AnimationTimer() {
+            final double oneTwentiethSecond=1e9/20;
+            long previousTime =0;
+            @Override
+            public void handle(long time) {
+                if ((time - previousTime) > 0.95 * oneTwentiethSecond) {
+                    continueComputation();
+                    previousTime = time;
+                }
+            }
+
+
+        };
+        timer.start();
+    }
+    private void continueComputation() {
+        Location loc = removeItem();
+        if (loc != null) {
+            finish(loc.row, loc.column);
+        } else {
+            timer.stop();
+            timer = null;
+            methodChoice.setDisable(false);
+            abortButton.setDisable(true);
+            message.setText("Click any square to begin.");
+            queue = null;
+            stack = null;
+            randomList = null;
+        }
+    }
+
+    private void finish(int r, int c) {
+        encounter(r - 1, c);
+        encounter(r + 1, c);
+        encounter(r, c - 1);
+        encounter(r, c + 1);
+        finished[r][c] = true;
+        draw();
+    }
+
+    private Location removeItem() {
+        Location loc = null;
+        switch (method) {
+            case STACK:
+                if (!stack.isEmpty()) {
+                    loc = stack.pop();
+                }
+                message.setText("Stack size is " + stack.getSize());
+                break;
+            case QUEUE:
+                if (!queue.isEmpty()) {
+                    loc=queue.dequeue();
+                }
+                message.setText("Queue size is " + queue.getSize());
+                break;
+            case RANDOM:
+                if (randomList.size() > 0) {
+                    int index = (int) (randomList.size() * Math.random());
+                    loc = randomList.get(index);
+                    randomList.remove(index);
+                }
+                message.setText("List size is " + randomList.size());
+                break;
+        }
+        return loc;
     }
 
     public static void main(String[] args) {
